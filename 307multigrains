@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+
+from sys import argv, stderr, exit
+from math import factorial
+
+# Do not modify this class, his default comportement is necessary for the program
+class   BadArgumentError(Exception):
+    def __init__(self, message, errors = "BadArgumentError"):
+        super().__init__(message)
+        self.errors = errors
+
+# Default object class
+class   Matrix():
+    """ Definition of Matrix class """
+    result = [-1, -1, -1, -1, -1]
+    var = {'n1': 0, 'n2': 0, 'n3': 0, 'n4': 0, 'po': 0, 'pw': 0, 'pc': 0, 'pb': 0, 'ps': 0}
+    def __init__(self, argument, total=0):
+        """ Initialise Separation's instance and check little errors """
+        for arg, i in zip(self.var, range(1, len(argument))):
+            if int(argument[i]) < 0:
+                raise BadArgumentError("'{}' must be positive (is {})".format(arg, argument[i]))
+            self.var[arg] = int(argument[i])
+        self.count = 0
+        self.matrix = [
+            [1, 0, 1, 0, 2, 1, 0, 0, 0, 0, self.var['n1']],
+            [1, 2, 0, 1, 0, 0, 1, 0, 0, 0, self.var['n2']],
+            [2, 1, 0, 1, 0, 0, 0, 1, 0, 0, self.var['n3']],
+            [0, 0, 3, 1, 2, 0, 0, 0, 1, 0, self.var['n4']],
+            [-self.var['po'], -self.var['pw'], -self.var['pc'],
+             -self.var['pb'], -self.var['ps'], 0, 0, 0, 0, 1, 0]
+        ]
+        self.limit = (factorial(len(self.matrix[-1]) + len(self.matrix))
+            / (factorial(len(self.matrix[-1])) * factorial(len(self.matrix))))
+        print(self.limit)
+
+    def findPivot(self):
+        """ Moi je trouve que Paul-Marie\0 il code bien et qu'il est beau et que tout le monde l'aime """
+        self.pivot = [self.matrix[-1].index(min(self.matrix[-1])), -1]
+        minimal_value = max([max(i) for i in self.matrix])
+        for i in range(len(self.matrix[:-1])):
+            if (self.matrix[i][self.pivot[0]] != 0
+                and self.matrix[i][-1] / self.matrix[i][self.pivot[0]] < minimal_value
+                and self.matrix[i][-1] / self.matrix[i][self.pivot[0]] > 0):
+                self.pivot[1] = i
+                minimal_value = self.matrix[i][-1] / self.matrix[i][self.pivot[0]]
+        if min(self.pivot) is -1:
+            raise BadArgumentError("Couldn't find the pivot over the matrix.")
+
+    def checkDeterioration(self):
+        """ Check if we reached the degenerecence's case """
+        self.count += 1
+        return self.count if self.count < self.limit - 1 else 0
+
+    def computeValue(self):
+        """ Calculate all printable value required by printValue method """
+        while sum(n < 0 for n in self.matrix[-1]) > 0 and self.checkDeterioration() != 0:
+            self.findPivot()
+            div = self.matrix[self.pivot[1]][self.pivot[0]]
+            if div != 0:
+                self.matrix[self.pivot[1]] = [
+                    self.matrix[self.pivot[1]][i] / div for i in range(len(self.matrix[-1]))]
+                for i in range(len(self.matrix)):
+                    if i != self.pivot[1]:
+                        self.matrix[i] = [self.matrix[i][d] - self.matrix[i][self.pivot[0]]
+                            * self.matrix[self.pivot[1]][d] for d in range(len(self.matrix[-1]))]
+            self.result[self.pivot[0] % len(self.result)] = self.pivot[1]
+        self.number = [str("%.2f" % self.matrix[self.result[i]][-1])
+                       if self.result[i] >= 0 else '0' for i in range(len(self.result))]
+
+    def printValue(self):
+        """ Print all computed value into the tab """
+        print("Resources: {} F1, {} F2, {} F3, {} F4".format(self.var['n1'],
+            self.var['n2'], self.var['n3'], self.var['n4']), end='\n\n')
+        print("Oat: {} units at ${}/unit".format(self.number[0], self.var['po']))
+        print("Wheat: {} units at ${}/unit".format(self.number[1], self.var['pw']))
+        print("Corn: {} units at ${}/unit".format(self.number[2], self.var['pc']))
+        print("Barley: {} units at ${}/unit".format(self.number[3], self.var['pb']))
+        print("Soy: {} units at ${}/unit".format(self.number[4], self.var['ps']))
+        print("\nTotal production value: ${:.2f}".format(self.matrix[-1][-1]))
+
+# Do not put more information in this function, it's must be clearer as possible
+def     main():
+    """ Main function who perform program's core action like arguments resolution """
+    if len(argv) is not 10:
+        raise BadArgumentError("Usage: ./307multigrains n1 n2 n3 n4 po pw pc pb ps")
+    obj = Matrix(argv)
+    obj.computeValue()
+    obj.printValue()
+
+# Don't touch at this except if u don't worry of problems
+if __name__ == "__main__":
+    try:
+        main()
+    except BaseException as error:
+        stderr.write(str(type(error).__name__) + ": {}\n".format(error))
+        exit(84)
